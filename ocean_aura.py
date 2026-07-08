@@ -25,49 +25,51 @@ class Particle:
     def __init__(self, width, height, depth=0.5):
         self.width = width
         self.height = height
-        self.depth = depth  # 0=前景, 1=后景
+        self.depth = depth  # 0=前景最近, 1=后景最远
         
         self.x = np.random.uniform(0, width)
         self.y = np.random.uniform(0, height)
         
-        speed_factor = 1.0 + (1.0 - depth) * 1.5
-        self.base_vx = np.random.uniform(-0.15, 0.15) * speed_factor
-        self.base_vy = np.random.uniform(-0.15, 0.15) * speed_factor - 0.05 * (1.0 - depth)
+        speed_factor = 1.0 + (1.0 - depth) * 0.3
+        self.base_vx = np.random.uniform(-0.08, 0.08) * speed_factor
+        self.base_vy = np.random.uniform(-0.08, 0.08) * speed_factor - 0.015 * (1.0 - depth)
         self.vx = self.base_vx
         self.vy = self.base_vy
         
-        size_min = 1.0 + (1.0 - depth) * 4.0
-        size_max = 2.0 + (1.0 - depth) * 5.0
+        size_min = 1.5 + (1.0 - depth) * 1.0
+        size_max = 2.5 + (1.0 - depth) * 1.5
         self.base_size = np.random.uniform(size_min, size_max)
         self.size = self.base_size
         
-        alpha_min = 0.08 + (1.0 - depth) * 0.15
-        alpha_max = 0.2 + (1.0 - depth) * 0.25
+        alpha_min = 0.15 + (1.0 - depth) * 0.10
+        alpha_max = 0.28 + (1.0 - depth) * 0.12
         self.base_alpha = np.random.uniform(alpha_min, alpha_max)
         self.alpha = self.base_alpha
         
         self.phase = np.random.uniform(0, 2 * math.pi)
         
-        color_choice = np.random.randint(0, 3)
-        if color_choice == 0:
+        r = np.random.random()
+        if r < 0.3:
             self.hue = 0
             self.saturation = 0.0
-        elif color_choice == 1:
+        elif r < 0.6:
             self.hue = np.random.uniform(100, 125)
-            self.saturation = np.random.uniform(0.4, 0.7)
+            self.saturation = np.random.uniform(0.15, 0.4)
         else:
             self.hue = np.random.uniform(85, 105)
-            self.saturation = np.random.uniform(0.5, 0.8)
+            self.saturation = np.random.uniform(0.2, 0.45)
         
-        self.base_brightness = np.random.uniform(0.6, 0.9)
+        self.base_brightness = np.random.uniform(0.65, 0.95)
         self.brightness = self.base_brightness
         
         self.orbit_radius = np.random.uniform(50, 120)
-        self.orbit_speed = np.random.uniform(0.002, 0.006) * (1 if np.random.random() > 0.5 else -1)
+        self.orbit_speed = np.random.uniform(0.0015, 0.004) * (1 if np.random.random() > 0.5 else -1)
         self.orbit_angle = np.random.uniform(0, 2 * math.pi)
         
         self.focus_factor = 0.0
         self.wake_factor = 0.0
+        
+        self.glow_scale = np.random.uniform(2.0, 3.0)
     
     def update(self, time, hand_x=None, hand_y=None):
         if hand_x is not None and hand_y is not None:
@@ -140,18 +142,110 @@ class Particle:
         bgr_color = cv2.cvtColor(hsv_color, cv2.COLOR_HSV2BGR)[0][0]
         color = (int(bgr_color[0]), int(bgr_color[1]), int(bgr_color[2]))
         
-        glow_intensity = self.focus_factor * 0.5 + self.wake_factor * 0.5
-        if glow_intensity > 0.1:
-            glow_size = int(self.size * (1.5 + glow_intensity * 2))
-            glow_alpha = int(alpha * glow_intensity * 80)
-            if glow_alpha > 5:
-                glow_color = tuple([min(255, int(c + 100 * glow_intensity)) for c in color])
-                overlay = frame.copy()
-                cv2.circle(overlay, (int(self.x), int(self.y)), glow_size, glow_color, -1)
-                cv2.addWeighted(overlay, glow_alpha / 255.0, frame, 1 - glow_alpha / 255.0, 0, frame)
+        effective_size = max(1, int(self.size))
         
-        core_color = tuple([min(255, int(c * alpha + 128 * alpha * self.wake_factor)) for c in color])
-        cv2.circle(frame, (int(self.x), int(self.y)), max(1, int(self.size)), core_color, -1)
+        outer_radius = effective_size * int(self.glow_scale * (1.5 + self.wake_factor * 1.5))
+        outer_alpha = int(alpha * 0.15 * (1.0 + self.wake_factor * 0.5))
+        if outer_alpha > 3 and outer_radius > 1:
+            outer_color = tuple([min(255, int(c * 0.6)) for c in color])
+            cv2.circle(frame, (int(self.x), int(self.y)), outer_radius, outer_color, -1)
+        
+        mid_radius = effective_size * int(1.8 * (1.0 + self.wake_factor * 0.8))
+        mid_alpha = int(alpha * 0.35 * (1.0 + self.wake_factor * 0.5))
+        if mid_alpha > 5 and mid_radius > 1:
+            mid_color = tuple([min(255, int(c * 0.8)) for c in color])
+            cv2.circle(frame, (int(self.x), int(self.y)), mid_radius, mid_color, -1)
+        
+        core_color = tuple([min(255, int(c * alpha + 100 * alpha * self.wake_factor)) for c in color])
+        cv2.circle(frame, (int(self.x), int(self.y)), effective_size, core_color, -1)
+
+
+class StarParticle:
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        
+        r = np.random.random()
+        if r < 0.7:
+            self.type = 'spread'
+        elif r < 0.9:
+            self.type = 'stay'
+        else:
+            self.type = 'far'
+        
+        angle = np.random.uniform(0, 2 * math.pi)
+        base_speed = np.random.uniform(1.0, 4.0)
+        
+        if self.type == 'spread':
+            self.vx = math.cos(angle) * base_speed * np.random.uniform(0.5, 1.5)
+            self.vy = math.sin(angle) * base_speed * np.random.uniform(0.5, 1.2) + 0.8
+            self.life = np.random.uniform(150, 250)
+            self.size = np.random.uniform(1.0, 2.5)
+        elif self.type == 'stay':
+            self.vx = math.cos(angle) * base_speed * 0.2
+            self.vy = math.sin(angle) * base_speed * 0.2 + 0.3
+            self.life = np.random.uniform(100, 200)
+            self.size = np.random.uniform(0.8, 2.0)
+        else:
+            self.vx = math.cos(angle) * base_speed * np.random.uniform(1.2, 2.5)
+            self.vy = math.sin(angle) * base_speed * np.random.uniform(1.0, 2.0) + 0.5
+            self.life = np.random.uniform(180, 300)
+            self.size = np.random.uniform(1.5, 3.5)
+        
+        self.max_life = self.life
+        self.base_size = self.size
+        
+        cr = np.random.random()
+        if cr < 0.25:
+            hue = 0
+            saturation = 0.0
+        elif cr < 0.5:
+            hue = np.random.uniform(100, 130)
+            saturation = np.random.uniform(0.2, 0.5)
+        elif cr < 0.7:
+            hue = np.random.uniform(75, 100)
+            saturation = np.random.uniform(0.25, 0.55)
+        elif cr < 0.85:
+            hue = np.random.uniform(140, 160)
+            saturation = np.random.uniform(0.15, 0.4)
+        else:
+            special_r = np.random.random()
+            if special_r < 0.33:
+                hue = np.random.uniform(20, 40)
+                saturation = np.random.uniform(0.4, 0.7)
+            elif special_r < 0.66:
+                hue = np.random.uniform(180, 210)
+                saturation = np.random.uniform(0.35, 0.6)
+            else:
+                hue = np.random.uniform(95, 115)
+                saturation = np.random.uniform(0.35, 0.6)
+        
+        brightness = np.random.uniform(0.7, 1.0)
+        hsv_color = np.uint8([[[int(hue), int(saturation * 255), int(brightness * 255)]]])
+        bgr_color = cv2.cvtColor(hsv_color, cv2.COLOR_HSV2BGR)[0][0]
+        self.color = (int(bgr_color[0]), int(bgr_color[1]), int(bgr_color[2]))
+        
+        self.phase = np.random.uniform(0, 2 * math.pi)
+    
+    def update(self):
+        self.vx *= 0.992
+        self.vy *= 0.992
+        
+        self.x += self.vx
+        self.y += self.vy
+        
+        self.life -= 1
+        
+        life_ratio = self.life / self.max_life
+        self.size = self.base_size * life_ratio
+        
+        return self.life > 0 and self.size > 0.3
+    
+    def draw(self, frame):
+        effective_size = max(1, int(self.size))
+        cv2.circle(frame, (int(self.x), int(self.y)), effective_size, self.color, -1)
 
 
 class Fish:
@@ -298,16 +392,39 @@ class OceanAura:
         self.width = width
         self.height = height
         
+        # 预计算背景渐变（只算一次，运行时复用）
+        self._base_gradient = np.zeros((height, width, 3), dtype=np.float32)
+        for y in range(height):
+            t = y / height
+            dark_blue = np.array([30, 8, 2], dtype=np.float32)
+            mid_blue = np.array([55, 18, 5], dtype=np.float32)
+            light_blue = np.array([80, 30, 10], dtype=np.float32)
+            if t < 0.5:
+                color = dark_blue + (mid_blue - dark_blue) * (t * 2)
+            else:
+                color = mid_blue + (light_blue - mid_blue) * ((t - 0.5) * 2)
+            self._base_gradient[y, :] = color
+        
+        # 低分辨率网格（1/4缩放，用于环境光和聚光计算）
+        self._lr_w = width // 4
+        self._lr_h = height // 4
+        y_coords = np.linspace(0, height - 1, self._lr_h)
+        x_coords = np.linspace(0, width - 1, self._lr_w)
+        self._lr_xx, self._lr_yy = np.meshgrid(x_coords, y_coords)
+        
+        self._spot_cache = None
+        self._spot_cache_xy = None
+        self._outer_spot_cache = None
+        self._outer_spot_cache_xy = None
+        self._vignette_mask = None
+        
         # 3层景深粒子
         self.particles = []
-        # 前景层（离镜头近）：35个，大、亮、快
-        for _ in range(35):
+        for _ in range(40):
             self.particles.append(Particle(width, height, depth=np.random.uniform(0.0, 0.3)))
-        # 中景层：50个，中等
-        for _ in range(50):
+        for _ in range(55):
             self.particles.append(Particle(width, height, depth=np.random.uniform(0.3, 0.7)))
-        # 后景层（离镜头远）：45个，小、暗、慢
-        for _ in range(45):
+        for _ in range(60):
             self.particles.append(Particle(width, height, depth=np.random.uniform(0.7, 1.0)))
         
         self.fishes = [Fish(width, height) for _ in range(20)]
@@ -322,6 +439,27 @@ class OceanAura:
         self.hand_visible = False
         self.detector = None
         self.use_tasks_api = False
+        
+        # 环绕手的小光斑（星星点点）
+        self.sparkles = []
+        for _ in range(25):
+            self.sparkles.append({
+                'angle': np.random.uniform(0, 2 * math.pi),
+                'radius': np.random.uniform(60, 200),
+                'speed': np.random.uniform(0.008, 0.02),
+                'size': np.random.uniform(1, 3),
+                'brightness': np.random.uniform(0.5, 0.9),
+                'phase': np.random.uniform(0, 2 * math.pi),
+                'hue': np.random.uniform(0, 120),
+                'saturation': np.random.uniform(0.0, 0.3),
+            })
+        
+        # 星光粒子（握拳释放）
+        self.star_particles = []
+        
+        # 握拳检测状态
+        self.is_fist = False
+        self.was_fist = False
     
     def init_detector(self):
         if HAS_MP_TASKS:
@@ -360,50 +498,106 @@ class OceanAura:
         return False
     
     def create_gradient_background(self, breath_factor):
-        frame = np.zeros((self.height, self.width, 3), dtype=np.float32)
+        frame = self._base_gradient.copy()
         
+        # 海水散射光：从顶部向下逐渐变暗，透明度5%~10%
+        scatter_intensity = (0.05 + 0.05 * breath_factor)
         for y in range(self.height):
-            t = y / self.height
-            dark_blue = np.array([40, 12, 3], dtype=np.float32)
-            mid_blue = np.array([70, 25, 8], dtype=np.float32)
-            light_blue = np.array([100, 40, 15], dtype=np.float32)
-            
-            if t < 0.5:
-                color = dark_blue + (mid_blue - dark_blue) * (t * 2)
-            else:
-                color = mid_blue + (light_blue - mid_blue) * ((t - 0.5) * 2)
-            
-            frame[y, :] = color
+            top_ratio = 1.0 - (y / self.height) ** 1.5
+            if top_ratio > 0.01:
+                scatter_value = int(20 * top_ratio * scatter_intensity)
+                frame[y, :, 0] = np.clip(frame[y, :, 0].astype(np.int32) + scatter_value, 0, 255)
+                frame[y, :, 1] = np.clip(frame[y, :, 1].astype(np.int32) + int(scatter_value * 0.6), 0, 255)
         
-        # 聚光效果（手附近更亮）
+        # 聚光效果：更强更明显
         if self.hand_visible:
-            # 生成径向渐变蒙版
-            y_coords = np.linspace(0, self.height - 1, self.height)
-            x_coords = np.linspace(0, self.width - 1, self.width)
-            xx, yy = np.meshgrid(x_coords, y_coords)
+            cx, cy = int(self.smooth_hand_x), int(self.smooth_hand_y)
+            if self._spot_cache is None or self._spot_cache_xy is None or \
+               abs(self._spot_cache_xy[0] - cx) > 8 or abs(self._spot_cache_xy[1] - cy) > 8:
+                dx = self._lr_xx - self.smooth_hand_x
+                dy = self._lr_yy - self.smooth_hand_y
+                dist = np.sqrt(dx * dx + dy * dy)
+                spot_mask = np.clip(1.0 - dist / 350.0, 0, 1)
+                spot_mask = spot_mask ** 1.4
+                self._spot_cache = cv2.resize(spot_mask, (self.width, self.height), interpolation=cv2.INTER_LINEAR)
+                self._spot_cache_xy = (cx, cy)
             
-            dx = xx - self.smooth_hand_x
-            dy = yy - self.smooth_hand_y
-            dist = np.sqrt(dx * dx + dy * dy)
-            
-            # 聚光半径和强度
-            spot_radius = 280.0
-            spot_intensity = 0.35 + 0.1 * breath_factor
-            
-            # 平滑的径向渐变（边缘柔和）
-            spot_mask = np.clip(1.0 - dist / spot_radius, 0, 1)
-            spot_mask = spot_mask ** 1.8  # 让中心更亮，边缘更柔和
-            
-            # 添加到背景（亮蓝色调的聚光）
-            spot_color = np.array([60, 30, 15], dtype=np.float32)
+            spot_intensity = 0.65 + 0.12 * breath_factor
+            spot_color = np.array([90, 50, 25], dtype=np.float32)
             for c in range(3):
-                frame[:, :, c] += spot_color[c] * spot_mask * spot_intensity
+                frame[:, :, c] += spot_color[c] * self._spot_cache * spot_intensity
+            
+            # 第二层柔和光晕
+            if self._outer_spot_cache is None or abs(self._outer_spot_cache_xy[0] - cx) > 8 or abs(self._outer_spot_cache_xy[1] - cy) > 8:
+                dist2 = np.sqrt(dx * dx + dy * dy)
+                outer_spot_mask = np.clip(1.0 - dist2 / 450.0, 0, 1)
+                outer_spot_mask = outer_spot_mask ** 2.0
+                self._outer_spot_cache = cv2.resize(outer_spot_mask, (self.width, self.height), interpolation=cv2.INTER_LINEAR)
+                self._outer_spot_cache_xy = (cx, cy)
+            
+            outer_color = np.array([40, 30, 15], dtype=np.float32)
+            for c in range(3):
+                frame[:, :, c] += outer_color[c] * self._outer_spot_cache * (0.3 + 0.1 * breath_factor)
+        
+        # 暗角效果（Vignette）：四周轻微变暗
+        if self._vignette_mask is None:
+            dx = self._lr_xx - self.width / 2
+            dy = self._lr_yy - self.height / 2
+            dist = np.sqrt(dx * dx + dy * dy)
+            max_dist = np.sqrt((self._lr_w/2)**2 + (self._lr_h/2)**2) * 0.9
+            self._vignette_mask = np.clip(1.0 - (dist / max_dist) ** 3.5, 0.75, 1.0)
+            self._vignette_mask = cv2.resize(self._vignette_mask, (self.width, self.height), interpolation=cv2.INTER_LINEAR)
+        
+        for c in range(3):
+            frame[:, :, c] = (frame[:, :, c] * self._vignette_mask).astype(np.uint8)
         
         # 整体呼吸感
-        frame *= (0.92 + 0.08 * breath_factor)
+        frame *= (0.90 + 0.10 * breath_factor)
         frame = np.clip(frame, 0, 255).astype(np.uint8)
         
         return frame
+    
+    def detect_fist(self, landmarks):
+        if not landmarks:
+            return False
+        
+        if len(landmarks) < 21:
+            return False
+        
+        def is_finger_folded(tip_idx, pip_idx):
+            tip_y = landmarks[tip_idx].y
+            pip_y = landmarks[pip_idx].y
+            return tip_y > pip_y + 0.02
+        
+        folded_count = 0
+        
+        if is_finger_folded(8, 6):
+            folded_count += 1
+        if is_finger_folded(12, 10):
+            folded_count += 1
+        if is_finger_folded(16, 14):
+            folded_count += 1
+        if is_finger_folded(20, 18):
+            folded_count += 1
+        
+        thumb_tip = landmarks[4]
+        wrist = landmarks[0]
+        thumb_dist = math.sqrt((thumb_tip.x - wrist.x)**2 + (thumb_tip.y - wrist.y)**2)
+        if thumb_dist < 0.15:
+            folded_count += 1
+        
+        return folded_count >= 4
+    
+    def release_starlight(self):
+        if self.hand_x is None or self.hand_y is None:
+            return
+        
+        if len(self.star_particles) > 200:
+            return
+        
+        particle_count = np.random.randint(40, 61)
+        for _ in range(particle_count):
+            self.star_particles.append(StarParticle(self.hand_x, self.hand_y, self.width, self.height))
     
     def run(self):
         cv2.namedWindow('Ocean Aura', cv2.WINDOW_NORMAL)
@@ -444,12 +638,24 @@ class OceanAura:
                             wrist = landmarks[0]
                             self.hand_x = wrist.x * self.width
                             self.hand_y = wrist.y * self.height
+                            
+                            self.is_fist = self.detect_fist(landmarks)
+                            
+                            if self.is_fist and not self.was_fist:
+                                self.release_starlight()
+                                if self.time % 30 == 0:
+                                    print("Fist detected! Releasing starlight")
+                            
+                            self.was_fist = self.is_fist
+                            
                             if self.time % 30 == 0:
                                 print(f"Hand detected (tasks): ({self.hand_x:.1f}, {self.hand_y:.1f})")
                                 sys.stdout.flush()
                         else:
                             self.hand_x = None
                             self.hand_y = None
+                            self.is_fist = False
+                            self.was_fist = False
                             if self.time == 10:
                                 print("No hand detected")
                                 print(f"Result type: {type(result)}")
@@ -464,11 +670,21 @@ class OceanAura:
                             wrist = landmarks.landmark[0]
                             self.hand_x = wrist.x * self.width
                             self.hand_y = wrist.y * self.height
+                            
+                            self.is_fist = self.detect_fist(landmarks.landmark)
+                            
+                            if self.is_fist and not self.was_fist:
+                                self.release_starlight()
+                            
+                            self.was_fist = self.is_fist
+                            
                             if self.time % 30 == 0:
                                 print(f"Hand detected (solutions): ({self.hand_x:.1f}, {self.hand_y:.1f})")
                         else:
                             self.hand_x = None
                             self.hand_y = None
+                            self.is_fist = False
+                            self.was_fist = False
                 else:
                     self.hand_x = None
                     self.hand_y = None
@@ -487,9 +703,33 @@ class OceanAura:
                     particle.update(self.time, self.hand_x, self.hand_y)
                     particle.draw(frame)
                 
+                # 环绕手的小光斑（星星点点）
+                if self.hand_visible:
+                    for sparkle in self.sparkles:
+                        sparkle['angle'] += sparkle['speed']
+                        flicker = 0.6 + 0.4 * math.sin(self.time * 0.008 + sparkle['phase'])
+                        x = self.smooth_hand_x + math.cos(sparkle['angle']) * sparkle['radius']
+                        y = self.smooth_hand_y + math.sin(sparkle['angle']) * sparkle['radius']
+                        
+                        hsv_color = np.uint8([[[int(sparkle['hue']), int(sparkle['saturation'] * 255), int(sparkle['brightness'] * flicker * 255)]]])
+                        bgr_color = cv2.cvtColor(hsv_color, cv2.COLOR_HSV2BGR)[0][0]
+                        color = (int(bgr_color[0]), int(bgr_color[1]), int(bgr_color[2]))
+                        
+                        size = int(sparkle['size'] * flicker)
+                        if size > 0 and x > 0 and x < self.width and y > 0 and y < self.height:
+                            cv2.circle(frame, (int(x), int(y)), size, color, -1)
+                            outer_size = size * 2
+                            outer_color = tuple([min(255, int(c * 0.4)) for c in color])
+                            cv2.circle(frame, (int(x), int(y)), outer_size, outer_color, -1)
+                
                 for fish in self.fishes:
                     fish.update(self.time, self.hand_x, self.hand_y)
                     fish.draw(frame)
+                
+                # 星光粒子（握拳释放）
+                self.star_particles = [p for p in self.star_particles if p.update()]
+                for p in self.star_particles:
+                    p.draw(frame)
                 
                 cv2.imshow('Ocean Aura', frame)
                 
