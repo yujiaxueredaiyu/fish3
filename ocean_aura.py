@@ -274,7 +274,10 @@ class Fish:
             self.color = (180, 185, 200)
         
         self.is_starfish = False
+        self.is_dissolve_fish = False
+        self.has_appeared = False
         self.trail_particles = []
+        self.dissolve_particles = []
         
         self.target_center_x = width // 2
         self.target_center_y = height // 2
@@ -295,6 +298,10 @@ class Fish:
             self.target_alpha = 0.0
             self.is_fading = True
         
+        if self.is_fading:
+            self.target_center_x += np.random.uniform(-3, 3)
+            self.target_center_y += np.random.uniform(-3, 3)
+        
         self.current_center_x += (self.target_center_x - self.current_center_x) * 0.02
         self.current_center_y += (self.target_center_y - self.current_center_y) * 0.02
         
@@ -303,6 +310,14 @@ class Fish:
         
         noise = np.random.uniform(-0.05, 0.05)
         noisy_radius = self.orbit_radius * (1 + noise * 0.1)
+        
+        if self.is_fading:
+            noisy_radius += self.orbit_radius * (1.0 - self.alpha) * 2.0
+        
+        if self.alpha <= 0.01:
+            self.x = np.random.uniform(0, self.width)
+            self.y = np.random.uniform(0, self.height)
+            self.orbit_angle = np.random.uniform(0, 2 * math.pi)
         
         target_x = self.current_center_x + math.cos(self.orbit_angle) * noisy_radius
         target_y = self.current_center_y + math.sin(self.orbit_angle) * noisy_radius
@@ -322,33 +337,59 @@ class Fish:
         self.x += self.vx
         self.y += self.vy
         
-        self.alpha += (self.target_alpha - self.alpha) * 0.02
+        fade_speed = 0.018 if self.is_fading else 0.02
+        self.alpha += (self.target_alpha - self.alpha) * fade_speed
         
-        if self.is_starfish and self.alpha > 0.3:
-            if time % 4 == 0 and len(self.trail_particles) < 15:
+        if self.alpha > 0.5:
+            self.has_appeared = True
+        
+        if self.is_starfish and self.alpha > 0.2:
+            if time % 3 == 0 and len(self.trail_particles) < 12:
                 trail_x = self.x - math.cos(self.angle) * self.size * 0.8
                 trail_y = self.y - math.sin(self.angle) * self.size * 0.8
                 self.trail_particles.append({
                     'x': trail_x,
                     'y': trail_y,
-                    'alpha': 0.8,
-                    'size': np.random.uniform(2, 4),
+                    'alpha': 0.9,
+                    'size': np.random.uniform(1.5, 3),
                     'color': [(255, 255, 255), (200, 220, 255), (150, 200, 255)][np.random.randint(0, 3)]
                 })
             
             for p in self.trail_particles:
                 p['x'] -= self.vx * 0.5
                 p['y'] -= self.vy * 0.5
-                p['alpha'] -= 0.02
+                p['alpha'] -= 0.025
             
             self.trail_particles = [p for p in self.trail_particles if p['alpha'] > 0]
+        
+        if self.is_dissolve_fish and self.is_fading and self.has_appeared and self.alpha < 0.6:
+            if time % 5 == 0 and len(self.dissolve_particles) < 6:
+                angle = np.random.uniform(0, 2 * math.pi)
+                speed = np.random.uniform(0.4, 1.0)
+                self.dissolve_particles.append({
+                    'x': self.x + np.random.uniform(-self.size * 0.5, self.size * 0.5),
+                    'y': self.y + np.random.uniform(-self.size * 0.5, self.size * 0.5),
+                    'vx': math.cos(angle) * speed,
+                    'vy': math.sin(angle) * speed,
+                    'alpha': 0.8,
+                    'size': np.random.uniform(1.5, 2.5),
+                    'color': (255, 255, 255)
+                })
+            
+            for p in self.dissolve_particles:
+                p['x'] += p['vx']
+                p['y'] += p['vy']
+                p['vx'] *= 0.96
+                p['vy'] *= 0.96
+                p['alpha'] -= 0.012
+            
+            self.dissolve_particles = [p for p in self.dissolve_particles if p['alpha'] > 0]
     
     def draw(self, frame):
         if self.alpha <= 0.01:
             return
         
         alpha = max(0.01, min(1.0, self.alpha))
-        alpha_int = int(alpha * 255)
         
         body_length = self.size
         body_width = self.size * 0.5
@@ -378,12 +419,16 @@ class Fish:
         
         eye_x = int(self.x + math.cos(self.angle) * body_length * 0.3)
         eye_y = int(self.y + math.sin(self.angle) * body_length * 0.15)
-        cv2.circle(frame, (eye_x, eye_y), 2, (255, 255, 255), -1)
+        eye_color = (int(255 * alpha), int(255 * alpha), int(255 * alpha))
+        cv2.circle(frame, (eye_x, eye_y), 2, eye_color, -1)
         cv2.circle(frame, (eye_x, eye_y), 1, (0, 0, 0), -1)
         
         for p in self.trail_particles:
-            p_alpha = int(p['alpha'] * alpha * 255)
             p_color = tuple([int(c * p['alpha'] * alpha) for c in p['color']])
+            cv2.circle(frame, (int(p['x']), int(p['y'])), int(p['size']), p_color, -1)
+        
+        for p in self.dissolve_particles:
+            p_color = tuple([int(c * p['alpha']) for c in p['color']])
             cv2.circle(frame, (int(p['x']), int(p['y'])), int(p['size']), p_color, -1)
 
 
@@ -428,9 +473,14 @@ class OceanAura:
             self.particles.append(Particle(width, height, depth=np.random.uniform(0.7, 1.0)))
         
         self.fishes = [Fish(width, height) for _ in range(20)]
-        starfish_indices = np.random.choice(20, 3, replace=False)
+        all_indices = np.arange(20)
+        np.random.shuffle(all_indices)
+        starfish_indices = all_indices[:3]
         for idx in starfish_indices:
             self.fishes[idx].is_starfish = True
+        dissolve_indices = all_indices[3:7]
+        for idx in dissolve_indices:
+            self.fishes[idx].is_dissolve_fish = True
         self.time = 0
         self.hand_x = None
         self.hand_y = None
