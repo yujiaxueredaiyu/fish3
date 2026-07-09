@@ -4,11 +4,16 @@
 
 ## 演示视频
 
-![Ocean Aura Demo](demo.mp4)
+![Ocean Aura Demo](demo2.mp4)
+
+## 演示截图
+
+![Ocean Aura Screenshot](demo_screenshot.png)
 
 ## 目录
 
 - [演示视频](#演示视频)
+- [演示截图](#演示截图)
 - [项目主题](#项目主题)
 - [功能特性](#功能特性)
 - [技术栈](#技术栈)
@@ -174,9 +179,11 @@ Ocean Aura/
 ├── CODE_OF_CONDUCT.md           # 行为准则
 ├── CONTRIBUTING.md              # 贡献指南
 ├── LICENSE                      # MIT许可证
+├── README.md                    # 项目说明
+├── demo2.mp4                    # 演示视频
+├── demo_screenshot.png          # 演示截图
 ├── pyproject.toml               # 项目配置
-├── requirements.txt             # 依赖列表
-└── README.md                    # 项目说明
+└── requirements.txt             # 依赖列表
 ```
 
 ## 开发说明
