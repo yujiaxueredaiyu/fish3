@@ -2,6 +2,19 @@
 
 一个基于 Python + OpenCV + MediaPipe 的互动艺术作品，营造深海梦幻氛围。
 
+## 目录
+
+- [项目主题](#项目主题)
+- [功能特性](#功能特性)
+- [技术栈](#技术栈)
+- [安装方式](#安装方式)
+- [运行方式](#运行方式)
+- [交互方式](#交互方式)
+- [项目结构](#项目结构)
+- [开发说明](#开发说明)
+- [贡献指南](#贡献指南)
+- [许可证](#许可证)
+
 ## 项目主题
 
 Ocean Aura 是一个沉浸式的互动艺术装置，模拟深海中的生物荧光世界。当你的手进入画面时，就像潜入深海，唤醒周围的海洋生命。
@@ -39,6 +52,7 @@ Ocean Aura 是一个沉浸式的互动艺术装置，模拟深海中的生物荧
 - 每条鱼有独立的角度、速度、轨道半径
 - 鱼身根据运动方向旋转，尾巴轻微摆动
 - 3条星光鱼会留下发光尾迹
+- 4条消散鱼淡出时会产生白色光点
 
 ### 5. 握拳释放星光（互动）
 - 握拳手势触发星光释放
@@ -50,23 +64,58 @@ Ocean Aura 是一个沉浸式的互动艺术装置，模拟深海中的生物荧
 - 粒子逐渐变小、变透明，自然消失
 - 颜色丰富：冰蓝、青蓝、白色、淡青色、淡紫色，偶尔金色/粉紫色点缀
 
+### 6. 沉浸式音频系统
+- 深海环境音持续循环播放
+- 握拳时触发星光音效
+- 鱼群出现时触发气泡音效
+
 ## 技术栈
 
-- Python 3.x
+- Python 3.8+
 - OpenCV (cv2) - 图像渲染
 - MediaPipe - 手部检测和手势识别
 - NumPy - 数值计算
 
-## 安装依赖
+## 安装方式
+
+### 使用 pip（推荐）
 
 ```bash
-pip install opencv-python mediapipe numpy
+pip install ocean-aura
+```
+
+### 从源码安装
+
+```bash
+git clone https://github.com/ocean-aura/ocean-aura.git
+cd ocean-aura
+pip install -e .
+```
+
+### 直接安装依赖
+
+```bash
+pip install opencv-python>=4.8.0 mediapipe>=0.10.0 numpy>=1.24.0
 ```
 
 ## 运行方式
 
+### 方式一：命令行工具
+
 ```bash
-python ocean_aura.py
+ocean-aura
+```
+
+### 方式二：Python 模块
+
+```bash
+python -m ocean_aura
+```
+
+### 方式三：直接运行
+
+```bash
+python src/ocean_aura/main.py
 ```
 
 ## 交互方式
@@ -80,35 +129,85 @@ python ocean_aura.py
 - **握拳** - 从掌心释放一片星光粒子
 - **松开再握拳** - 再次释放星光
 
-## 退出方式
-
+### 退出方式
 - 按 `Q` 键退出
 - 按 `ESC` 键退出
 - 点击窗口关闭按钮退出
 
-## 文件结构
+## 项目结构
 
 ```
 Ocean Aura/
-├── ocean_aura.py    # 主程序文件
-├── hand_landmarker.task  # MediaPipe手部检测模型（需自行下载）
-└── README.md        # 项目说明文档
+├── src/
+│   └── ocean_aura/
+│       ├── __init__.py          # 包初始化，导出公共API
+│       ├── __main__.py          # 模块入口
+│       ├── audio.py             # 音频系统
+│       ├── config.py            # 配置参数管理
+│       ├── fish.py              # 鱼群系统
+│       ├── hand_detection.py    # 手部检测
+│       ├── main.py              # 主应用类
+│       ├── particles.py         # 粒子系统
+│       └── visualization.py     # 可视化渲染
+├── tests/                       # 测试目录
+├── assets/                      # 音频资源
+│   ├── ambient_ocean.wav        # 环境音
+│   ├── sparkle.wav              # 星光音效
+│   └── bubble.wav               # 气泡音效
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # 持续集成配置
+├── .gitignore                   # Git忽略规则
+├── CODE_OF_CONDUCT.md           # 行为准则
+├── CONTRIBUTING.md              # 贡献指南
+├── LICENSE                      # MIT许可证
+├── pyproject.toml               # 项目配置
+├── requirements.txt             # 依赖列表
+└── README.md                    # 项目说明
 ```
-
-## 注意事项
-
-1. 需要摄像头权限
-2. 首次运行可能需要下载 MediaPipe 模型
-3. 建议在光线充足的环境下使用，以便手部检测更准确
-4. 程序占用约 30%~50% CPU，确保系统性能足够
-5. 支持 Windows、macOS、Linux 系统
 
 ## 开发说明
 
-本项目采用模块化设计，主要类包括：
-- `Particle` - 发光粒子类
-- `StarParticle` - 星光粒子类（握拳释放）
-- `Fish` - 鱼类
-- `OceanAura` - 主应用类
+### 模块说明
 
-所有代码控制在约 780 行以内，保持简洁稳定。
+| 模块 | 说明 | 主要类 |
+|------|------|--------|
+| `audio.py` | 音频播放管理 | `AudioSystem` |
+| `config.py` | 全局参数配置 | 配置常量 |
+| `fish.py` | 鱼群行为逻辑 | `Fish` |
+| `hand_detection.py` | 手部追踪检测 | `HandDetector` |
+| `main.py` | 主应用程序 | `OceanAura`, `main()` |
+| `particles.py` | 粒子效果系统 | `Particle`, `StarParticle` |
+| `visualization.py` | 背景渲染 | `OceanVisualizer` |
+
+### 配置参数
+
+所有配置参数集中在 `config.py` 中：
+
+- `PARTICLE_CONFIG` - 粒子系统参数
+- `FISH_CONFIG` - 鱼群系统参数
+- `SPARKLE_CONFIG` - 光斑系统参数
+- `STAR_PARTICLE_CONFIG` - 星光粒子参数
+- `AUDIO_CONFIG` - 音频系统参数
+- `VISUAL_CONFIG` - 视觉效果参数
+
+### 运行测试
+
+```bash
+python -m pytest tests/
+```
+
+### 代码格式化
+
+```bash
+black src/
+isort src/
+```
+
+## 贡献指南
+
+欢迎贡献代码！请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详细信息。
+
+## 许可证
+
+MIT License - 详见 [LICENSE](LICENSE)

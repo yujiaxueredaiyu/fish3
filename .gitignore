@@ -1,0 +1,28 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MediaPipe models (downloaded automatically)
+hand_landmarker.task
+
+# Logs
+*.log
+
+# Audio generated files
+assets/*.wav
