@@ -70,7 +70,12 @@ FLOW_FIELD_CONFIG = {
 
 def get_assets_path():
     base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    return os.path.join(base_path, 'assets')
+    assets_path = os.path.join(base_path, 'assets')
+    
+    if not os.path.exists(assets_path):
+        assets_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets')
+    
+    return assets_path
 
 
 def get_model_path(model_name='hand_landmarker.task'):

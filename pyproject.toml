@@ -45,6 +45,9 @@ where = ["src"]
 [tool.setuptools.package-data]
 "ocean_aura" = ["assets/*.wav"]
 
+[tool.setuptools.data-files]
+"" = ["assets/*.wav"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
