@@ -23,6 +23,3 @@ hand_landmarker.task
 
 # Logs
 *.log
-
-# Audio generated files
-assets/*.wav

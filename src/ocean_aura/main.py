@@ -9,6 +9,7 @@ from .particles import Particle, StarParticle
 from .fish import Fish
 from .hand_detection import HandDetector
 from .visualization import OceanVisualizer
+from .flow_field import FlowField
 from .config import (
     DEFAULT_WIDTH,
     DEFAULT_HEIGHT,
@@ -73,6 +74,7 @@ class OceanAura:
         
         self.detector = HandDetector()
         self.audio = AudioSystem(get_assets_path())
+        self.flow_field = FlowField()
     
     def release_starlight(self):
         if self.hand_x is None or self.hand_y is None:
@@ -117,6 +119,7 @@ class OceanAura:
                 if self.time == 1:
                     self.audio.start_ambient()
                 self.audio.update()
+                self.flow_field.update()
                 
                 frame = self.visualizer.create_background(
                     breath_factor,
@@ -157,7 +160,7 @@ class OceanAura:
                     self.hand_visible = False
                 
                 for particle in self.particles:
-                    particle.update(self.time, self.hand_x, self.hand_y)
+                    particle.update(self.time, self.hand_x, self.hand_y, self.flow_field)
                     particle.draw(frame)
                 
                 if self.hand_visible:
@@ -180,14 +183,14 @@ class OceanAura:
                 
                 for fish in self.fishes:
                     prev_alpha = fish.alpha
-                    fish.update(self.time, self.hand_x, self.hand_y)
+                    fish.update(self.time, self.hand_x, self.hand_y, self.flow_field)
                     fish.draw(frame)
                     
                     if prev_alpha < 0.1 and fish.alpha >= 0.1:
                         if np.random.random() < 0.2:
                             self.audio.play_bubble()
                 
-                self.star_particles = [p for p in self.star_particles if p.update()]
+                self.star_particles = [p for p in self.star_particles if p.update(self.flow_field)]
                 for p in self.star_particles:
                     p.draw(frame)
                 

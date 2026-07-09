@@ -64,7 +64,14 @@ Ocean Aura 是一个沉浸式的互动艺术装置，模拟深海中的生物荧
 - 粒子逐渐变小、变透明，自然消失
 - 颜色丰富：冰蓝、青蓝、白色、淡青色、淡紫色，偶尔金色/粉紫色点缀
 
-### 6. 沉浸式音频系统
+### 6. 全局洋流（Global Ocean Current）
+- 整个场景存在一个低强度的二维流场
+- 漂浮粒子、星光粒子、鱼都会受到流场影响
+- 流场方向每8~15秒缓慢变化，使用线性插值平滑过渡
+- 影响系数：漂浮粒子0.15，星光粒子0.10，鱼0.05
+- 所有对象在保持各自运动规律的同时，产生轻微一致性的偏移
+
+### 7. 沉浸式音频系统
 - 深海环境音持续循环播放
 - 握拳时触发星光音效
 - 鱼群出现时触发气泡音效
@@ -175,6 +182,7 @@ Ocean Aura/
 | `audio.py` | 音频播放管理 | `AudioSystem` |
 | `config.py` | 全局参数配置 | 配置常量 |
 | `fish.py` | 鱼群行为逻辑 | `Fish` |
+| `flow_field.py` | 全局流场系统 | `FlowField` |
 | `hand_detection.py` | 手部追踪检测 | `HandDetector` |
 | `main.py` | 主应用程序 | `OceanAura`, `main()` |
 | `particles.py` | 粒子效果系统 | `Particle`, `StarParticle` |
@@ -185,6 +193,7 @@ Ocean Aura/
 所有配置参数集中在 `config.py` 中：
 
 - `PARTICLE_CONFIG` - 粒子系统参数
+- `FLOW_FIELD_CONFIG` - 全局洋流参数
 - `FISH_CONFIG` - 鱼群系统参数
 - `SPARKLE_CONFIG` - 光斑系统参数
 - `STAR_PARTICLE_CONFIG` - 星光粒子参数

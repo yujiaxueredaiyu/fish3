@@ -43,7 +43,7 @@ class Fish:
         self.target_alpha = 0.0
         self.is_fading = False
     
-    def update(self, time, hand_x=None, hand_y=None):
+    def update(self, time, hand_x=None, hand_y=None, flow_field=None):
         if hand_x is not None and hand_y is not None:
             self.target_center_x = hand_x
             self.target_center_y = hand_y
@@ -94,6 +94,11 @@ class Fish:
         
         self.x += self.vx
         self.y += self.vy
+        
+        if flow_field is not None:
+            fx, fy = flow_field.get_influence('fish')
+            self.x += fx
+            self.y += fy
         
         if self.alpha <= 0.01:
             self.x = np.random.uniform(0, self.width)

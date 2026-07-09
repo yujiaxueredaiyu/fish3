@@ -53,7 +53,7 @@ class Particle:
         
         self.glow_scale = np.random.uniform(2.0, 3.0)
     
-    def update(self, time, hand_x=None, hand_y=None):
+    def update(self, time, hand_x=None, hand_y=None, flow_field=None):
         if hand_x is not None and hand_y is not None:
             dx = hand_x - self.x
             dy = hand_y - self.y
@@ -67,22 +67,22 @@ class Particle:
             
             wake_radius = 200.0
             if distance < wake_radius:
-                self.wake_factor = (1.0 - distance / wake_radius) ** 1.5
+                self.wake_factor = (1.0 - distance / wake_radius) ** 2.0
                 falloff = self.wake_factor
                 
-                self.orbit_angle += self.orbit_speed * (1 + falloff * 2.5)
-                dynamic_radius = self.orbit_radius * (0.4 + 0.6 * (1 - falloff))
+                self.orbit_angle += self.orbit_speed * (1 + falloff * 1.0)
+                dynamic_radius = self.orbit_radius * (0.7 + 0.3 * (1 - falloff))
                 orbit_x = math.cos(self.orbit_angle) * dynamic_radius
                 orbit_y = math.sin(self.orbit_angle) * dynamic_radius
                 
                 target_x = hand_x + orbit_x
                 target_y = hand_y + orbit_y
                 
-                attract_strength = 0.02 * (1.0 + (1.0 - self.depth) * 0.5)
+                attract_strength = 0.008 * (1.0 + (1.0 - self.depth) * 0.3)
                 self.vx += (target_x - self.x) * attract_strength * falloff
                 self.vy += (target_y - self.y) * attract_strength * falloff
                 
-                speed_multiplier = 1.0 + 3.0 * falloff
+                speed_multiplier = 1.0 + 1.0 * falloff
                 self.vx *= speed_multiplier
                 self.vy *= speed_multiplier
             else:
@@ -99,6 +99,11 @@ class Particle:
         damp = 0.97
         self.vx = self.vx * damp + self.base_vx * (1 - damp)
         self.vy = self.vy * damp + self.base_vy * (1 - damp)
+        
+        if flow_field is not None:
+            fx, fy = flow_field.get_influence('particle')
+            self.vx += fx
+            self.vy += fy
         
         self.x += self.vx
         self.y += self.vy
@@ -211,9 +216,14 @@ class StarParticle:
         
         self.phase = np.random.uniform(0, 2 * math.pi)
     
-    def update(self):
+    def update(self, flow_field=None):
         self.vx *= 0.992
         self.vy *= 0.992
+        
+        if flow_field is not None:
+            fx, fy = flow_field.get_influence('star_particle')
+            self.vx += fx
+            self.vy += fy
         
         self.x += self.vx
         self.y += self.vy

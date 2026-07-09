@@ -27,7 +27,7 @@ FISH_CONFIG = {
 }
 
 SPARKLE_CONFIG = {
-    'count': 25,
+    'count': 0,
     'radius_min': 60,
     'radius_max': 200,
     'speed_min': 0.008,
@@ -55,6 +55,16 @@ VISUAL_CONFIG = {
     'hand_smooth_factor': 0.08,
     'vignette_strength': 3.5,
     'vignette_min': 0.75
+}
+
+FLOW_FIELD_CONFIG = {
+    'min_change_interval': 8,
+    'max_change_interval': 15,
+    'max_speed': 0.15,
+    'smooth_factor': 0.015,
+    'particle_influence': 0.15,
+    'star_particle_influence': 0.10,
+    'fish_influence': 0.05
 }
 
 
