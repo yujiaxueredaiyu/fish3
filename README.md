@@ -4,7 +4,7 @@
 
 ## 演示视频
 
-![Ocean Aura Demo](demo2.mp4)
+![Ocean Aura Demo](demo3.mp4)
 
 ## 演示截图
 
@@ -163,6 +163,7 @@ Ocean Aura/
 │       ├── audio.py             # 音频系统
 │       ├── config.py            # 配置参数管理
 │       ├── fish.py              # 鱼群系统
+│       ├── flow_field.py        # 全局流场系统
 │       ├── hand_detection.py    # 手部检测
 │       ├── main.py              # 主应用类
 │       ├── particles.py         # 粒子系统
@@ -180,7 +181,7 @@ Ocean Aura/
 ├── CONTRIBUTING.md              # 贡献指南
 ├── LICENSE                      # MIT许可证
 ├── README.md                    # 项目说明
-├── demo2.mp4                    # 演示视频
+├── demo3.mp4                    # 演示视频
 ├── demo_screenshot.png          # 演示截图
 ├── pyproject.toml               # 项目配置
 └── requirements.txt             # 依赖列表
