@@ -33,4 +33,4 @@ jobs:
 
     - name: Run basic tests
       run: |
-        PYTHONPATH=src python tests/test_ocean_aura.py
+        PYTHONPATH=src python tests/test_basic.py
