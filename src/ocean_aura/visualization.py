@@ -48,31 +48,32 @@ class OceanVisualizer:
         
         if hand_visible and hand_x is not None and hand_y is not None:
             cx, cy = int(hand_x), int(hand_y)
+            
+            dx = self._lr_xx - hand_x
+            dy = self._lr_yy - hand_y
+            dist = np.sqrt(dx * dx + dy * dy)
+            
             if self._spot_cache is None or self._spot_cache_xy is None or \
                abs(self._spot_cache_xy[0] - cx) > 8 or abs(self._spot_cache_xy[1] - cy) > 8:
-                dx = self._lr_xx - hand_x
-                dy = self._lr_yy - hand_y
-                dist = np.sqrt(dx * dx + dy * dy)
-                spot_mask = np.clip(1.0 - dist / 350.0, 0, 1)
-                spot_mask = spot_mask ** 1.4
-                self._spot_cache = cv2.resize(spot_mask, (self.width, self.height), interpolation=cv2.INTER_LINEAR)
+                inner_mask = np.clip(1.0 - dist / 280.0, 0, 1)
+                inner_mask = inner_mask ** 1.2
+                self._spot_cache = cv2.resize(inner_mask, (self.width, self.height), interpolation=cv2.INTER_LINEAR)
                 self._spot_cache_xy = (cx, cy)
             
-            spot_intensity = 0.65 + 0.12 * breath_factor
-            spot_color = np.array([90, 50, 25], dtype=np.float32)
+            inner_intensity = 0.70 + 0.15 * breath_factor
+            inner_color = np.array([110, 70, 35], dtype=np.float32)
             for c in range(3):
-                frame[:, :, c] += spot_color[c] * self._spot_cache * spot_intensity
+                frame[:, :, c] += inner_color[c] * self._spot_cache * inner_intensity
             
             if self._outer_spot_cache is None or abs(self._outer_spot_cache_xy[0] - cx) > 8 or abs(self._outer_spot_cache_xy[1] - cy) > 8:
-                dist2 = np.sqrt(dx * dx + dy * dy)
-                outer_spot_mask = np.clip(1.0 - dist2 / 450.0, 0, 1)
-                outer_spot_mask = outer_spot_mask ** 2.0
-                self._outer_spot_cache = cv2.resize(outer_spot_mask, (self.width, self.height), interpolation=cv2.INTER_LINEAR)
+                outer_mask = np.clip(1.0 - dist / 500.0, 0, 1)
+                outer_mask = outer_mask ** 2.5
+                self._outer_spot_cache = cv2.resize(outer_mask, (self.width, self.height), interpolation=cv2.INTER_LINEAR)
                 self._outer_spot_cache_xy = (cx, cy)
             
-            outer_color = np.array([40, 30, 15], dtype=np.float32)
+            outer_color = np.array([60, 90, 120], dtype=np.float32)
             for c in range(3):
-                frame[:, :, c] += outer_color[c] * self._outer_spot_cache * (0.3 + 0.1 * breath_factor)
+                frame[:, :, c] += outer_color[c] * self._outer_spot_cache * (0.4 + 0.15 * breath_factor)
         
         if self._vignette_mask is None:
             dx = self._lr_xx - self.width / 2

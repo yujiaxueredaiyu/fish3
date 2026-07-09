@@ -2,8 +2,13 @@
 
 一个基于 Python + OpenCV + MediaPipe 的互动艺术作品，营造深海梦幻氛围。
 
+## 演示视频
+
+![Ocean Aura Demo](demo.mp4)
+
 ## 目录
 
+- [演示视频](#演示视频)
 - [项目主题](#项目主题)
 - [功能特性](#功能特性)
 - [技术栈](#技术栈)
@@ -14,6 +19,7 @@
 - [开发说明](#开发说明)
 - [贡献指南](#贡献指南)
 - [许可证](#许可证)
+- [Credits](#credits)
 
 ## 项目主题
 
@@ -220,3 +226,13 @@ isort src/
 ## 许可证
 
 MIT License - 详见 [LICENSE](LICENSE)
+
+## Credits
+
+
+Audio Assets:
+
+- Pixabay ( `https://pixabay.com/)` 
+
+
+This project uses free audio resources provided under the Pixabay Content License.

@@ -9,6 +9,8 @@ try:
 except ImportError:
     HAS_WINSOUND = False
 
+from .config import AUDIO_CONFIG
+
 
 class AudioSystem:
     def __init__(self, assets_path=None):
@@ -69,7 +71,7 @@ class AudioSystem:
             return
         
         now = time.time()
-        if now - self.last_bubble_time < 1.0:
+        if now - self.last_bubble_time < AUDIO_CONFIG['bubble_cooldown']:
             return
         self.last_bubble_time = now
         
