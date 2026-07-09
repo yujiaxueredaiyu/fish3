@@ -114,6 +114,8 @@ class OceanAura:
                 self.time += 1
                 breath_factor = math.sin(self.time * VISUAL_CONFIG['breath_speed'])
                 
+                if self.time == 1:
+                    self.audio.start_ambient()
                 self.audio.update()
                 
                 frame = self.visualizer.create_background(
@@ -182,7 +184,7 @@ class OceanAura:
                     fish.draw(frame)
                     
                     if prev_alpha < 0.1 and fish.alpha >= 0.1:
-                        if np.random.random() < 0.3:
+                        if np.random.random() < 0.2:
                             self.audio.play_bubble()
                 
                 self.star_particles = [p for p in self.star_particles if p.update()]

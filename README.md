@@ -151,9 +151,9 @@ Ocean Aura/
 │       └── visualization.py     # 可视化渲染
 ├── tests/                       # 测试目录
 ├── assets/                      # 音频资源
-│   ├── ambient_ocean.wav        # 环境音
-│   ├── sparkle.wav              # 星光音效
-│   └── bubble.wav               # 气泡音效
+│   ├── samuelfjohanns-atmosphere-of-atlantis-246389.wav  # 深海环境音
+│   ├── djartmusic-christmas-sparkle-whoosh_1-275404.wav  # 星光音效
+│   └── krnbeatz-bubble-in-water-422579.wav               # 气泡音效
 ├── .github/
 │   └── workflows/
 │       └── ci.yml               # 持续集成配置
