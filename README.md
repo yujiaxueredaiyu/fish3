@@ -237,10 +237,31 @@ MIT License - 详见 [LICENSE](LICENSE)
 
 ## Credits
 
+### Author
+- **yujiaxueredaiyu** - [GitHub](https://github.com/yujiaxueredaiyu)
 
-Audio Assets:
+### Audio Assets
+- **Ambient Sound**: "Atmosphere of Atlantis" by Samuel F Johanns
+- **Starlight Effect**: "Christmas Sparkle Whoosh" by DJ Artmusic  
+- **Bubble Effect**: "Bubble in Water" by Krn Beatz
+- **Source**: [Pixabay](https://pixabay.com/)
+- **License**: Pixabay Content License
 
-- Pixabay ( `https://pixabay.com/)` 
+### Third-Party Libraries
+| Library | Purpose | License |
+|---------|---------|---------|
+| OpenCV | Computer Vision | Apache 2.0 |
+| MediaPipe | Hand Tracking | Apache 2.0 |
+| NumPy | Numerical Computing | BSD-3-Clause |
 
+### Model
+- **Hand Landmarker**: MediaPipe Hand Tracking Model
+- **Source**: Google MediaPipe
+- **License**: Apache 2.0
+
+### Team
+- **yujiaxueredaiyu** - 独立开发者，负责项目整体设计与开发
+
+---
 
 This project uses free audio resources provided under the Pixabay Content License.

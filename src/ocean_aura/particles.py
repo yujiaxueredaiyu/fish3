@@ -32,17 +32,19 @@ class Particle:
         
         r = np.random.random()
         if r < 0.3:
-            self.hue = 0
-            self.saturation = 0.0
+            hue = 0
+            saturation = 0.0
         elif r < 0.6:
-            self.hue = np.random.uniform(100, 125)
-            self.saturation = np.random.uniform(0.15, 0.4)
+            hue = np.random.uniform(100, 125)
+            saturation = np.random.uniform(0.15, 0.4)
         else:
-            self.hue = np.random.uniform(85, 105)
-            self.saturation = np.random.uniform(0.2, 0.45)
+            hue = np.random.uniform(85, 105)
+            saturation = np.random.uniform(0.2, 0.45)
         
         self.base_brightness = np.random.uniform(0.65, 0.95)
         self.brightness = self.base_brightness
+        
+        self._precompute_colors(hue, saturation)
         
         self.orbit_radius = np.random.uniform(50, 120)
         self.orbit_speed = np.random.uniform(0.0015, 0.004) * (1 if np.random.random() > 0.5 else -1)
@@ -53,7 +55,12 @@ class Particle:
         
         self.glow_scale = np.random.uniform(2.0, 3.0)
     
-    def update(self, time, hand_x=None, hand_y=None, flow_field=None):
+    def _precompute_colors(self, hue, saturation):
+        hsv_color = np.uint8([[[int(hue), int(saturation * 255), 255]]])
+        bgr_color = cv2.cvtColor(hsv_color, cv2.COLOR_HSV2BGR)[0][0]
+        self.base_bgr = np.array([bgr_color[0], bgr_color[1], bgr_color[2]], dtype=np.float32)
+    
+    def update(self, time, hand_x=None, hand_y=None, flow_field=None, highlight_intensity=0.0, state_intensity=1.0):
         if hand_x is not None and hand_y is not None:
             dx = hand_x - self.x
             dy = hand_y - self.y
@@ -78,11 +85,11 @@ class Particle:
                 target_x = hand_x + orbit_x
                 target_y = hand_y + orbit_y
                 
-                attract_strength = 0.008 * (1.0 + (1.0 - self.depth) * 0.3)
+                attract_strength = 0.008 * (1.0 + (1.0 - self.depth) * 0.3) * state_intensity
                 self.vx += (target_x - self.x) * attract_strength * falloff
                 self.vy += (target_y - self.y) * attract_strength * falloff
                 
-                speed_multiplier = 1.0 + 1.0 * falloff
+                speed_multiplier = 1.0 + 1.0 * falloff * state_intensity
                 self.vx *= speed_multiplier
                 self.vy *= speed_multiplier
             else:
@@ -92,8 +99,8 @@ class Particle:
             self.wake_factor = 0.0
         
         focus_boost = self.focus_factor * 0.6
-        self.brightness = self.base_brightness + focus_boost + self.wake_factor * 0.3
-        self.alpha = self.base_alpha + self.focus_factor * 0.25 + self.wake_factor * 0.35
+        self.brightness = self.base_brightness + focus_boost + self.wake_factor * 0.3 + highlight_intensity * 0.2
+        self.alpha = (self.base_alpha + self.focus_factor * 0.25 + self.wake_factor * 0.35) * (1.0 + highlight_intensity * 0.2) * state_intensity
         self.size = self.base_size * (1.0 + self.focus_factor * 0.8 + self.wake_factor * 0.5)
         
         damp = 0.97
@@ -125,25 +132,31 @@ class Particle:
         alpha = max(0.03, min(1.0, self.alpha))
         brightness = max(0.5, min(1.1, self.brightness))
         
-        hsv_color = np.uint8([[[int(self.hue), int(self.saturation * 255), int(min(brightness, 1.0) * 255)]]])
-        bgr_color = cv2.cvtColor(hsv_color, cv2.COLOR_HSV2BGR)[0][0]
-        color = (int(bgr_color[0]), int(bgr_color[1]), int(bgr_color[2]))
+        color = (int(self.base_bgr[0] * brightness), 
+                 int(self.base_bgr[1] * brightness), 
+                 int(self.base_bgr[2] * brightness))
         
         effective_size = max(1, int(self.size))
         
         outer_radius = effective_size * int(self.glow_scale * (1.5 + self.wake_factor * 1.5))
         outer_alpha = int(alpha * 0.15 * (1.0 + self.wake_factor * 0.5))
         if outer_alpha > 3 and outer_radius > 1:
-            outer_color = tuple([min(255, int(c * 0.6)) for c in color])
+            outer_color = (int(self.base_bgr[0] * brightness * 0.6 * alpha), 
+                           int(self.base_bgr[1] * brightness * 0.6 * alpha), 
+                           int(self.base_bgr[2] * brightness * 0.6 * alpha))
             cv2.circle(frame, (int(self.x), int(self.y)), outer_radius, outer_color, -1)
         
         mid_radius = effective_size * int(1.8 * (1.0 + self.wake_factor * 0.8))
         mid_alpha = int(alpha * 0.35 * (1.0 + self.wake_factor * 0.5))
         if mid_alpha > 5 and mid_radius > 1:
-            mid_color = tuple([min(255, int(c * 0.8)) for c in color])
+            mid_color = (int(self.base_bgr[0] * brightness * 0.8 * alpha), 
+                         int(self.base_bgr[1] * brightness * 0.8 * alpha), 
+                         int(self.base_bgr[2] * brightness * 0.8 * alpha))
             cv2.circle(frame, (int(self.x), int(self.y)), mid_radius, mid_color, -1)
         
-        core_color = tuple([min(255, int(c * alpha + 100 * alpha * self.wake_factor)) for c in color])
+        core_color = (int(self.base_bgr[0] * brightness * alpha + 100 * alpha * self.wake_factor), 
+                      int(self.base_bgr[1] * brightness * alpha + 100 * alpha * self.wake_factor), 
+                      int(self.base_bgr[2] * brightness * alpha + 100 * alpha * self.wake_factor))
         cv2.circle(frame, (int(self.x), int(self.y)), effective_size, core_color, -1)
 
 

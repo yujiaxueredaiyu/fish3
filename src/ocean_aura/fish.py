@@ -43,15 +43,18 @@ class Fish:
         self.target_alpha = 0.0
         self.is_fading = False
     
-    def update(self, time, hand_x=None, hand_y=None, flow_field=None):
+    def update(self, time, hand_x=None, hand_y=None, flow_field=None, highlight_intensity=0.0, state_intensity=1.0):
         if hand_x is not None and hand_y is not None:
             self.target_center_x = hand_x
             self.target_center_y = hand_y
-            self.target_alpha = 1.0
+            self.target_alpha = state_intensity
             self.is_fading = False
         else:
             self.target_alpha = 0.0
             self.is_fading = True
+        
+        self.highlight_intensity = highlight_intensity
+        self.state_intensity = state_intensity
         
         if self.is_fading:
             self.target_center_x += np.random.uniform(-8, 8)
@@ -82,7 +85,9 @@ class Fish:
         dy = target_y - self.y
         dist = math.sqrt(dx * dx + dy * dy)
         
-        move_speed = self.speed * (1.0 + (1.0 - self.alpha) * 0.5)
+        highlight_speed = 1.0 + getattr(self, 'highlight_intensity', 0.0) * 1.2
+        state_speed = 0.7 + 0.3 * getattr(self, 'state_intensity', 1.0)
+        move_speed = self.speed * (1.0 + (1.0 - self.alpha) * 0.5) * highlight_speed * state_speed
         
         if dist > 1:
             self.vx = (dx / dist) * move_speed
@@ -159,6 +164,8 @@ class Fish:
         
         alpha = max(0.01, min(1.0, self.alpha))
         
+        highlight_factor = 1.0 + getattr(self, 'highlight_intensity', 0.0) * 0.15
+        
         body_length = self.size
         body_width = self.size * 0.5
         
@@ -172,7 +179,7 @@ class Fish:
             by = math.sin(self.angle + theta) * body_width * 0.5
             body_points.append((int(self.x + bx), int(self.y + by)))
         
-        body_color = tuple([int(c * alpha) for c in self.color])
+        body_color = tuple([int(c * alpha * highlight_factor) for c in self.color])
         cv2.fillPoly(frame, [np.array(body_points, dtype=np.int32)], body_color)
         
         tail_p1 = (int(self.x - math.cos(self.angle) * body_length * 0.4),
