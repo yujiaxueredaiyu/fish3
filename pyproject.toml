@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "An immersive interactive deep-sea art installation using Python + OpenCV + MediaPipe"
 readme = "README.md"
 authors = [
-    { name = "Ocean Aura Contributors" }
+    { name = "yujiaxueredaiyu" }
 ]
 license = { file = "LICENSE" }
 classifiers = [
@@ -36,8 +36,8 @@ dependencies = [
 ocean-aura = "ocean_aura.main:main"
 
 [project.urls]
-"Homepage" = "https://github.com/ocean-aura/ocean-aura"
-"Repository" = "https://github.com/ocean-aura/ocean-aura.git"
+"Homepage" = "https://github.com/yujiaxueredaiyu/fish3"
+"Repository" = "https://github.com/yujiaxueredaiyu/fish3.git"
 
 [tool.setuptools.packages.find]
 where = ["src"]

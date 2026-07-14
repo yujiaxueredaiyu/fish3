@@ -105,8 +105,8 @@ pip install ocean-aura
 ### 从源码安装
 
 ```bash
-git clone https://github.com/ocean-aura/ocean-aura.git
-cd ocean-aura
+git clone https://github.com/yujiaxueredaiyu/fish3.git
+cd fish3
 pip install -e .
 ```
 
